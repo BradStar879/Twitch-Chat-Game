@@ -2,8 +2,10 @@ import os
 import random
 from twitchio.ext import commands
 import paint
+import time
 
 approved_users = [os.environ['CHANNEL']]
+waiting_users = {}
 
 bot = commands.Bot(
     # set up the bot
@@ -78,16 +80,18 @@ async def check_approved_users(ctx):
         await ctx.send(approved_users)
 
 
-@bot.command(name='startcoloring')
-async def check_approved_users(ctx):
-    if approved_user(ctx.author):
-        await paint.main()
-
-
 @bot.command(name='color')
 async def color(ctx):
-    params = ctx.content.split()
-    paint.write_pixel(((int(params[1])), int(params[2])), (int(params[3]), int(params[4]), int(params[5])))
+    if ctx.author.name not in waiting_users or int(round(time.time())) - waiting_users[ctx.author.name] >= 30:
+        if paint.write_pixel(ctx.content):
+            waiting_users[ctx.author.name] = int(round(time.time()))
+            await ctx.send(ctx.author.name + ' pixel successful')
+
+
+@bot.command(name='resetimage')
+async def reset_image(ctx):
+    if approved_user(ctx.author):
+        paint.reset_image()
 
 
 def approved_user(author):
